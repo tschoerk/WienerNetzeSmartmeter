@@ -48,13 +48,13 @@ class LiveSensor(BaseSensor, SensorEntity):
                     # if not, we'll have to guesstimate (because api is shitty-pom-fritty)
                     # for that zaehlpunkt
                     verbrauch_raw = await self.get_consumption_raw(
-                        smartmeter, before(today())
+                        smartmeter, before(before(today()))
                     )
                     if (
                             "values" in verbrauch_raw
                             and "statistics" in verbrauch_raw
                     ):
-                        avg = safeget(verbrauch_raw, [["statistics"], ["average"]])
+                        avg = safeget(verbrauch_raw, "statistics", "average")
                         yesterdays_sum = sum(
                             (
                                 y["value"] if y["value"] is not None else avg
@@ -62,7 +62,7 @@ class LiveSensor(BaseSensor, SensorEntity):
                             )
                         )
                         if yesterdays_sum > 0:
-                            self._state = yesterdays_sum
+                            self._state = yesterdays_sum/1000
                     else:
                         _LOGGER.error("Unable to load consumption")
                         _LOGGER.error(
