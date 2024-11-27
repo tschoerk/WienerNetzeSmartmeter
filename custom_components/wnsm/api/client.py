@@ -41,7 +41,7 @@ class Smartmeter:
 
     def load_login_page(self):
         """
-        loads login page and extracts encoded login url
+        loads login page with username form and extracts encoded login url
         """
         login_url = const.AUTH_URL + "auth?" + parse.urlencode(const.LOGIN_ARGS)
         try:
@@ -55,7 +55,29 @@ class Smartmeter:
         tree = html.fromstring(result.content)
         action = tree.xpath("(//form/@action)")[0]
         return action
-
+    
+    def load_login_password_page(self, url):
+        """
+        loads login page with password form and extracts encoded login url
+        """
+        try:
+            result = self.session.post(
+            url,
+            data={
+                "username": self.username,
+                "login": "",
+            },
+                allow_redirects=False,
+            )
+        except Exception as exception:
+            raise SmartmeterConnectionError(
+                "Could not login with credentials"
+            ) from exception
+        tree = html.fromstring(result.content)
+        action = tree.xpath("(//form/@action)")[0]
+           
+        return action
+    
     def credentials_login(self, url):
         """
         login with credentials provided the login url
@@ -124,8 +146,9 @@ class Smartmeter:
         """
         login with credentials specified in ctor
         """
-        url = self.load_login_page()
-        code = self.credentials_login(url)
+        login_url = self.load_login_page()
+        login_password_url = self.load_login_password_page(login_url)
+        code = self.credentials_login(login_password_url)
         tokens = self.load_tokens(code)
 
         self._access_token = tokens["access_token"]
